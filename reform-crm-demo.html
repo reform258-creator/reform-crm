@@ -790,6 +790,27 @@ kbd{padding:2px 5px;background:var(--sidebar-border);border-radius:3px;font-size
 .sp-due-amt{font-family:'Fraunces',serif;font-size:26px;font-weight:300;letter-spacing:-1px;color:var(--ink)}
 .sp-due-amt.zero{color:var(--green)}
 
+
+/* ── service list in modal ───────────────────────────────── */
+.svc-list-table{width:100%;border-collapse:collapse;margin:4px 0 8px}
+.svc-list-table th{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;padding:0 6px 6px 0;border-bottom:1.5px solid var(--border);text-align:left}
+.svc-list-row td{padding:9px 6px 9px 0;border-bottom:1px solid var(--border2);vertical-align:middle}
+.svc-list-name{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
+.svc-list-disc{font-size:11px;color:var(--green);font-weight:600;background:rgba(72,187,120,0.12);padding:1px 5px;border-radius:4px}
+.svc-list-dur{font-size:12px;color:var(--ink3)}
+.svc-list-price{font-size:13px;font-weight:600;color:var(--ink);text-align:right}
+.svc-list-del{border:none;background:none;cursor:pointer;color:var(--ink3);font-size:13px;padding:3px 5px;border-radius:5px;transition:all 110ms}
+.svc-list-del:hover{color:var(--red,#e53e3e);background:rgba(229,62,62,0.08)}
+.svc-add-row{display:flex;align-items:center;gap:10px;padding:6px 0 2px}
+.svc-add-btn{display:flex;align-items:center;gap:5px;padding:7px 13px;border:1.5px dashed var(--border);border-radius:8px;font-size:12.5px;color:var(--ink2);background:none;cursor:pointer;font-family:inherit;transition:all 130ms}
+.svc-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.svc-total-dur{font-size:12px;color:var(--ink3);margin-left:auto}
+.svc-picker-drop{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-top:4px;box-shadow:0 4px 16px rgba(0,0,0,0.09);background:var(--surface)}
+.svc-pick-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;transition:background 110ms}
+.svc-pick-item:hover{background:var(--accent-ll)}
+.svc-pick-item+.svc-pick-item{border-top:1px solid var(--border2)}
+.svc-pick-name{font-size:13px;font-weight:500;color:var(--ink)}
+.svc-pick-meta{font-size:11.5px;color:var(--ink3)}
 </style>
 </head>
 <body>
@@ -2627,7 +2648,7 @@ function cellClick(e,dayMs){
   const d=new Date(dayMs);
   np={clientId:null,services:{},masterId:visMasters()[0]||'m1',
     start:`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(clickH)}:${p(clickM)}`,
-    billDisc:0,billDiscType:'%',tab:'details'};
+    billDisc:0,billDiscType:'%',tab:'details',pickerOpen:false};
   renderModal();
 }
 
@@ -3015,14 +3036,14 @@ function confirmPM(){
 }
 
 // ── NEW APPT MODAL ────────────────────────────────────────────────
-let np={clientId:null,services:{},masterId:'m1',start:'',billDisc:0,billDiscType:'%',tab:'details'};
+let np={clientId:null,services:{},masterId:'m1',start:'',billDisc:0,billDiscType:'%',tab:'details',pickerOpen:false};
 let ccPending='';
 
 function openNewAppt(){
   const now=new Date();
   np={clientId:null,services:{},masterId:'m1',
     start:`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}T${p(now.getHours())}:00`,
-    billDisc:0,billDiscType:'%',tab:'details'};
+    billDisc:0,billDiscType:'%',tab:'details',pickerOpen:false};
   renderModal();
 }
 function closeModal(){const w=document.getElementById('moWrap');if(w)w.remove();}
@@ -3076,42 +3097,58 @@ function renderModal(){
       <div class="csdrop" id="csDrop" style="display:none"></div>
     </div>`;
 
+  const selSvcs=Object.entries(np.services).filter(([,v])=>v.on);
+  const totalSelDur=selSvcs.reduce((s,[id])=>{const sv=SERVICES.find(x=>x.id===id);return s+(sv?sv.dur:0);},0);
+  const svcRowsH=selSvcs.map(([id,v])=>{
+    const sv=SERVICES.find(s=>s.id===id);if(!sv)return '';
+    const sub=np.clientId?getSub(np.clientId):null;
+    const canSub=sub&&SERVICES.find(s=>s.id===sub.subTypeId&&s.id===id);
+    const effP=v.sub&&canSub?0:Math.round(sv.price*(1-(v.disc||0)/100));
+    const durH=Math.floor(sv.dur/60),durM=sv.dur%60;
+    const durStr=durH>0?`${durH} год. ${durM>0?durM+' хв.':''}`:sv.dur+' хв.';
+    return `<tr class="svc-list-row">
+      <td class="svc-list-name"><span>${sv.name}</span>${v.disc>0?`<span class="svc-list-disc">-${v.disc}%</span>`:''}</td>
+      <td class="svc-list-dur">${durStr}</td>
+      <td class="svc-list-price">${effP.toLocaleString('uk-UA')} ₴</td>
+      <td><button class="svc-list-del" onclick="np.services['${id}']={...np.services['${id}'],on:false};np.pickerOpen=false;renderModal()">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const availSvcs=SERVICES.filter(s=>!np.services[s.id]?.on);
+  const pickerDropH=np.pickerOpen?`<div class="svc-picker-drop" id="svcPickerDrop">
+    ${availSvcs.length?availSvcs.map(s=>`
+      <div class="svc-pick-item" onclick="np.services['${s.id}']={on:true,disc:0,sub:false};np.pickerOpen=false;renderModal()">
+        <span class="svc-pick-name">${s.name}</span>
+        <span class="svc-pick-meta">${s.dur} хв · ${s.price.toLocaleString('uk-UA')} ₴</span>
+      </div>`).join(''):`<div style="padding:12px;text-align:center;color:var(--ink3);font-size:12.5px">Всі послуги додано</div>`}
+  </div>`:'';
+
   const svcsH=`
-    <div class="svc-cards">
-      ${SERVICES.map(svc=>{
-        const v=np.services[svc.id]||{on:false,disc:0,sub:false};
-        const sub=np.clientId?getSub(np.clientId,svc.id):null;
-        const effP=v.sub&&sub?0:Math.round(svc.price*(1-(v.disc||0)/100));
-        return `<div class="svc-card-sel${v.on?' on':''}" onclick="np.services['${svc.id}']={...np.services['${svc.id}']||{disc:0,sub:false},on:!${v.on}};renderModal()">
-          ${v.on?`<div class="sc-check"><svg width="9" height="9" fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>`:''}
-          <div class="sc-name">${svc.name}</div>
-          <div class="sc-meta"><span>${svc.dur} хв</span>${v.on&&v.disc>0?`<span style="color:var(--green);font-weight:600">-${v.disc}%</span>`:''}</div>
-          <div class="sc-price">${v.on?effP.toLocaleString('uk-UA'):svc.price.toLocaleString('uk-UA')} ₴</div>
-          ${v.on?`<div class="sc-disc" onclick="event.stopPropagation()">
-            <span style="font-size:11px;color:var(--ink3)">Знижка:</span>
-            <input type="number" min="0" max="100" value="${v.disc||''}" placeholder="0%"
-              oninput="np.services['${svc.id}']={...np.services['${svc.id}'],disc:parseInt(this.value)||0};renderModal()" onclick="event.stopPropagation()"/>
-            ${sub?`<span class="sc-sub" onclick="np.services['${svc.id}']={...np.services['${svc.id}'],sub:!${v.sub}};renderModal()">
-              <span style="font-size:13px">🎫</span>${v.sub?'<s>'+svc.price.toLocaleString('uk-UA')+' ₴</s> 0 ₴':'Абонемент'}</span>`:''}
-          </div>`:''}
-        </div>`;
-      }).join('')}
+    ${selSvcs.length?`<table class="svc-list-table">
+      <thead><tr>
+        <th>Послуга</th>
+        <th style="width:90px">Тривалість</th>
+        <th style="width:90px;text-align:right">Ціна</th>
+        <th style="width:28px"></th>
+      </tr></thead>
+      <tbody>${svcRowsH}</tbody>
+    </table>`:''}
+    <div class="svc-add-row">
+      <button class="svc-add-btn" onclick="np.pickerOpen=!np.pickerOpen;renderModal()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Додати послугу
+      </button>
+      ${totalSelDur>0?`<span class="svc-total-dur">Заг.: ${Math.floor(totalSelDur/60)>0?Math.floor(totalSelDur/60)+' год. ':''} ${totalSelDur%60>0?totalSelDur%60+' хв.':''}</span>`:''}
     </div>
-    ${Object.entries(np.services).some(([,v])=>v.on)?`
-    <div class="svc-summary">
-      ${Object.entries(np.services).filter(([,v])=>v.on).map(([id,v])=>{
-        const svc=SERVICES.find(s=>s.id===id);if(!svc)return '';
-        return `<div class="svc-tag">${svc.name} · ${svc.dur}хв<button onclick="np.services['${id}']={...np.services['${id}'],on:false};renderModal()">×</button></div>`;
-      }).join('')}
-    </div>`:''}
-    <div class="bill-disc-bar">
+    ${pickerDropH}
+    ${selSvcs.length?`<div class="bill-disc-bar">
       <span class="bdb-lbl">Знижка на чек:</span>
       <input class="bdb-inp" type="number" min="0" value="${np.billDisc||''}" placeholder="0" oninput="np.billDisc=parseInt(this.value)||0;renderModal()"/>
       <div class="type-tog">
         <button class="tt-btn${np.billDiscType==='%'?' act':''}" onclick="np.billDiscType='%';renderModal()">%</button>
         <button class="tt-btn${np.billDiscType==='₴'?' act':''}" onclick="np.billDiscType='₴';renderModal()">₴</button>
       </div>
-    </div>`;
+    </div>`:''}` ;
 
     // History
   const hist=client?getHistory(client.id):[];
@@ -3428,7 +3465,7 @@ function openDrawer(dateStr, timeStr){
   const now = new Date();
   np={clientId:null,services:{},masterId:MASTERS[0]?.id||'m1',
     start:`${dateStr||`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`}T${timeStr||`${p(now.getHours())}:00`}`,
-    billDisc:0,billDiscType:'%',tab:'details',editId:null};
+    billDisc:0,billDiscType:'%',tab:'details',editId:null,pickerOpen:false};
   renderModal();
 }
 function closeQA(){ closeModal(); }
