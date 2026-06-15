@@ -794,8 +794,8 @@ kbd{padding:2px 5px;background:var(--sidebar-border);border-radius:3px;font-size
 /* ── service list in modal ───────────────────────────────── */
 .svc-list-table{width:100%;border-collapse:collapse;margin:4px 0 8px}
 .svc-list-table th{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;padding:0 6px 6px 0;border-bottom:1.5px solid var(--border);text-align:left}
-.svc-list-row td{padding:9px 6px 9px 0;border-bottom:1px solid var(--border2);vertical-align:middle}
-.svc-list-name{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
+.svc-list-row td{padding:9px 8px;border-bottom:1px solid var(--border2);vertical-align:middle}
+.svc-list-name{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;padding-left:4px}
 .svc-list-disc{font-size:11px;color:var(--green);font-weight:600;background:rgba(72,187,120,0.12);padding:1px 5px;border-radius:4px}
 .svc-list-dur{font-size:12px;color:var(--ink3)}
 .svc-list-price{font-size:13px;font-weight:600;color:var(--ink);text-align:right}
@@ -815,7 +815,7 @@ kbd{padding:2px 5px;background:var(--sidebar-border);border-radius:3px;font-size
 .svc-sub-flag{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:5px;background:var(--accent-ll);color:var(--accent-d);border:1px solid var(--accent-l);cursor:pointer;transition:all 120ms;white-space:nowrap;user-select:none}
 .svc-sub-flag.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .svc-sub-flag:hover{opacity:0.85}
-.svc-disc-cell{width:80px;padding:9px 6px 9px 0}
+.svc-disc-cell{width:180px;padding:9px 8px}
 .svc-disc-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;width:68px}
 .svc-disc-input{width:42px;padding:4px 6px;border:none;outline:none;font-size:12.5px;color:var(--ink);background:transparent;font-family:inherit}
 .svc-disc-pct{padding:0 6px 0 0;font-size:12px;color:var(--ink3)}
@@ -3120,13 +3120,16 @@ function renderModal(){
       onclick="np.services['${id}']={...np.services['${id}'],sub:!${v.sub}};renderModal()"
       title="Залишилось ${subLeft} сеансів по абонементу">🎟 ${v.sub?'Списати':'Абонемент'}</span>`:'';
     return `<tr class="svc-list-row">
-      <td class="svc-list-name"><span>${sv.name}</span>${subFlag}</td>
+      <td class="svc-list-name"><span>${sv.name}</span></td>
       <td class="svc-disc-cell">
-        <div class="svc-disc-wrap">
-          <input class="svc-disc-input" type="number" min="0" max="100" value="${v.disc||''}" placeholder="0"
-            oninput="np.services['${id}']={...np.services['${id}'],disc:parseInt(this.value)||0};renderModal()"
-            onclick="event.stopPropagation()"/>
-          <span class="svc-disc-pct">%</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div class="svc-disc-wrap">
+            <input class="svc-disc-input" type="number" min="0" max="100" value="${v.disc||''}" placeholder="0"
+              oninput="np.services['${id}']={...np.services['${id}'],disc:parseInt(this.value)||0};renderModal()"
+              onclick="event.stopPropagation()"/>
+            <span class="svc-disc-pct">%</span>
+          </div>
+          ${subFlag}
         </div>
       </td>
       <td class="svc-list-dur">${durStr}</td>
@@ -3148,7 +3151,7 @@ function renderModal(){
     ${selSvcs.length?`<table class="svc-list-table">
       <thead><tr>
         <th>Послуга</th>
-        <th style="width:80px">Знижка</th>
+        <th style="width:180px">Знижка / Абонемент</th>
         <th style="width:100px">Тривалість</th>
         <th style="width:90px;text-align:right">Ціна</th>
         <th style="width:28px"></th>
