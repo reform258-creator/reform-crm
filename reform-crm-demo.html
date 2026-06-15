@@ -2882,7 +2882,10 @@ let pm={appt:null,method:'cash',amount:0,dep:0,useSub:false};
 
 function openPM(appt){
   pm.appt=appt||activeAppt;if(!pm.appt)return;
-  pm.method='cash';pm.amount=pm.appt.price-pm.appt.discount;pm.dep=0;pm.useSub=false;
+  pm.method='cash';pm.dep=0;
+  const _useSub=!!(pm.appt.services?.some(s=>s.subUsed));
+  pm.useSub=_useSub;
+  pm.amount=_useSub?0:pm.appt.price-pm.appt.discount;
   _buildPM();
 }
 function closePM(){const w=document.getElementById('pmWrap');if(w)w.remove();}
@@ -2963,13 +2966,13 @@ function _pmTogDep(){
 function _pmRefreshSubRow(){
   const el=document.getElementById('pmSubRow');if(!el)return;
   const a=pm.appt;if(!a)return;
+  if(!pm.useSub){el.innerHTML='';return;}
   const sub=getSub(a.client.id);
   if(!sub){el.innerHTML='';return;}
-  const st=SUB_TYPES.find(t=>t.id===sub.subTypeId)||{name:'Абонемент'};
   const left=sub.total-sub.used;
-  el.innerHTML=`<div class="pm-tog" style="margin:0 0 12px;padding:10px 12px;background:${pm.useSub?'var(--accent-ll)':'var(--bg)'};border:1.5px solid ${pm.useSub?'var(--accent)':'var(--border)'};border-radius:9px;transition:all 140ms ease" onclick="_pmTogSub()">
-    <div class="tog${pm.useSub?' on':''}"><div class="tog-k"></div></div>
-    <span class="tog-lbl">🎟️ Списати з абонементу <strong>${st.name}</strong> (залишилось ${left})</span>
+  el.innerHTML=`<div style="margin:0 0 12px;padding:10px 12px;background:var(--accent-ll);border:1.5px solid var(--accent);border-radius:9px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:15px">🎟️</span>
+    <span style="font-size:13px;color:var(--ink2)">Сеанс буде списано з абонементу · залишилось ${left}</span>
   </div>`;
 }
 function _pmTogSub(){
@@ -3141,7 +3144,7 @@ function renderModal(){
   const availSvcs=SERVICES.filter(s=>!np.services[s.id]?.on);
   const pickerDropH=np.pickerOpen?`<div class="svc-picker-drop" id="svcPickerDrop">
     ${availSvcs.length?availSvcs.map(s=>`
-      <div class="svc-pick-item" onclick="np.services['${s.id}']={on:true,disc:0,sub:false};np.pickerOpen=false;renderModal()">
+      <div class="svc-pick-item" onclick="np.services['${s.id}']={on:true,disc:0,sub:false};renderModal()">
         <span class="svc-pick-name">${s.name}</span>
         <span class="svc-pick-meta">${s.dur} хв · ${s.price.toLocaleString('uk-UA')} ₴</span>
       </div>`).join(''):`<div style="padding:12px;text-align:center;color:var(--ink3);font-size:12.5px">Всі послуги додано</div>`}
