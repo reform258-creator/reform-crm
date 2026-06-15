@@ -251,6 +251,7 @@ kbd{padding:2px 5px;background:var(--sidebar-border);border-radius:3px;font-size
 .btn-ghost:hover{border-color:var(--ink3);color:var(--ink)}
 .btn-primary{padding:9px 20px;background:var(--accent);color:#fff;border-radius:9px;font-size:13px;font-weight:500;box-shadow:0 2px 8px rgba(200,136,106,0.3)}
 .btn-primary:hover{background:var(--accent-d)}
+.btn-ghost:disabled,.btn-primary:disabled{opacity:0.35;cursor:not-allowed;pointer-events:none}
 
 /* form fields */
 .fsec{padding:14px 22px;border-bottom:1px solid var(--border)}
@@ -3242,8 +3243,8 @@ function renderModal(){
       <div><div class="mft-lbl">До сплати</div><div class="mft-total${total===0?' zero':''}">${total.toLocaleString('uk-UA')} ₴</div></div>
       <div class="mft-actions">
         <button class="btn-ghost" onclick="closeModal()">Закрити</button>
-        <button class="btn-ghost" onclick="saveAppt(false)">Зберегти</button>
-        <button class="btn-primary" onclick="saveAppt(true)">Оплатити →</button>
+        <button class="btn-ghost" onclick="saveAppt(false)" ${!np.clientId||!selSvcs.length?'disabled title="Оберіть клієнта та послугу"':''}>Зберегти</button>
+        <button class="btn-primary" onclick="saveAppt(true)" ${!np.clientId||!selSvcs.length?'disabled title="Оберіть клієнта та послугу"':''}>Оплатити →</button>
       </div>
     </div>
   </div></div>`;
