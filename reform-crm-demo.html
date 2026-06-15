@@ -2847,7 +2847,6 @@ function renderSP(){
 }
 function spTogSub(){spSubUsed=!spSubUsed;renderSP();}
 function spStatus(s){if(!activeAppt)return;activeAppt.status=s;sbUpdateAppt(activeAppt.id,{status:s});renderSP();renderCal();}
-function spStatus(s){if(!activeAppt)return;activeAppt.status=s;sbUpdateAppt(activeAppt.id,{status:s});renderSP();renderCal();}
 
 // ── PAY MODAL ─────────────────────────────────────────────────────
 let pm={appt:null,method:'cash',amount:0,dep:0,useSub:false};
